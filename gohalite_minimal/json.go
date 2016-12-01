@@ -40,6 +40,11 @@ func (n *Site) UnmarshalJSON(buf []byte) error {
 	return nil
 }
 
+func (n *Site) MarshalJSON() ([]byte, error) {
+    s := fmt.Sprintf("[%d, %d]", n.Owner, n.Strength)
+    return []byte(s), nil
+}
+
 func (g *Game) Load(filename string, turn int, id int) error {
 
     file, err := ioutil.ReadFile(filename)
@@ -129,4 +134,44 @@ func (g *Game) SetMovesFromHLT() error {
     }
 
     return nil
+}
+
+
+
+
+func (h *HLT) AddFrame(g *Game) {
+
+    h.Frames = append(h.Frames, make([][]Site, g.Height))
+    for y := 0 ; y < g.Height ; y++ {
+        h.Frames[len(h.Frames) - 1][y] = make([]Site, g.Width)
+        for x := 0 ; x < g.Width ; x++ {
+            site := Site{}
+            site.Owner = g.Owner[g.XY_to_I(x,y)]
+            site.Strength = g.Strength[g.XY_to_I(x,y)]
+            h.Frames[len(h.Frames) - 1][y][x] = site
+        }
+    }
+
+    h.NumFrames++
+}
+
+
+func (h *HLT) AddMoves(g *Game) {
+    h.Moves = append(h.Moves, make([][]int, g.Height))
+    for y := 0 ; y < g.Height ; y++ {
+        h.Moves[len(h.Moves) - 1][y] = make([]int, g.Width)
+        for x := 0 ; x < g.Width ; x++ {
+            h.Moves[len(h.Moves) - 1][y][x] = g.Moves[g.XY_to_I(x,y)]
+        }
+    }
+}
+
+func (h *HLT) SetProductions(g *Game) {
+    h.Productions = nil
+    for y := 0 ; y < g.Height ; y++ {
+        h.Productions = append(h.Productions, nil)
+        for x := 0 ; x < g.Width ; x++ {
+            h.Productions[y] = append(h.Productions[y], g.Production[g.XY_to_I(x,y)])
+        }
+    }
 }

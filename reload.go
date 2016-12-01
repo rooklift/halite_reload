@@ -2,6 +2,7 @@ package main
 
 import (
     "bufio"
+    "encoding/json"
     "fmt"
     "os"
     "os/exec"
@@ -16,10 +17,13 @@ import (
 const SHOW_PROGRESS_IN_CONSOLE = true
 const SLOW = false
 
+const OUTPUT_FILE_PREFIX = "reload_"
 
-func bot_handler(cmd string, id int, g *hal.Game, nudges chan bool) {
+
+func bot_handler(cmd string, id int, g *hal.Game, nudges chan bool, namequery chan string) {
 
     have_warned_eof := false
+    botname := "Unknown"
 
     cmd_split := strings.Fields(cmd)
     exec_command := exec.Command(cmd_split[0], cmd_split[1:]...)
@@ -60,47 +64,54 @@ func bot_handler(cmd string, id int, g *hal.Game, nudges chan bool) {
             have_warned_eof = true
         }
     }
-    botname := scanner.Text()
+    botname = scanner.Text()
 
     for {
-        <- nudges                                               // Hub tells us to act
-        fmt.Fprintf(i_pipe, "%s\n", g.GameMapString())          // Send the map
+        select {
 
-        if scanner.Scan() == false {
-            if have_warned_eof == false {
-                fmt.Printf("Turn %d: bot %d output reached EOF\n", g.Turn, id)
-                have_warned_eof = true
-            }
-        }
-        fields := strings.Fields(scanner.Text())
+        case <- nudges:     // Hub tells us to act
 
-        for n := 0 ; n < len(fields) - 2 ; n += 3 {
-            x, err := strconv.Atoi(fields[n])
-            if err != nil {
-                fmt.Printf("Turn %d: %s sent some unfathomable outputs\n", g.Turn, botname)
-                break
-            }
-            y, err := strconv.Atoi(fields[n + 1])
-            if err != nil {
-                fmt.Printf("Turn %d: %s sent some unfathomable outputs\n", g.Turn, botname)
-                break
-            }
-            dir, err := strconv.Atoi(fields[n + 2])
-            if err != nil {
-                fmt.Printf("Turn %d: %s sent some unfathomable outputs\n", g.Turn, botname)
-                break
-            }
+            fmt.Fprintf(i_pipe, "%s\n", g.GameMapString())          // Send the map
 
-            i := g.XY_to_I(x,y)
-
-            if g.Owner[i] == id {
-                if dir >= 0 && dir <= 4 {
-                    g.Moves[i] = dir
+            if scanner.Scan() == false {
+                if have_warned_eof == false {
+                    fmt.Printf("Turn %d: bot %d output reached EOF\n", g.Turn, id)
+                    have_warned_eof = true
                 }
             }
-        }
+            fields := strings.Fields(scanner.Text())
 
-        nudges <- true                                  // Tell Hub we're done. Using the same channel is OK in this simple case.
+            for n := 0 ; n < len(fields) - 2 ; n += 3 {
+                x, err := strconv.Atoi(fields[n])
+                if err != nil {
+                    fmt.Printf("Turn %d: %s sent some unfathomable outputs\n", g.Turn, botname)
+                    break
+                }
+                y, err := strconv.Atoi(fields[n + 1])
+                if err != nil {
+                    fmt.Printf("Turn %d: %s sent some unfathomable outputs\n", g.Turn, botname)
+                    break
+                }
+                dir, err := strconv.Atoi(fields[n + 2])
+                if err != nil {
+                    fmt.Printf("Turn %d: %s sent some unfathomable outputs\n", g.Turn, botname)
+                    break
+                }
+
+                i := g.XY_to_I(x,y)
+
+                if g.Owner[i] == id {
+                    if dir >= 0 && dir <= 4 {
+                        g.Moves[i] = dir
+                    }
+                }
+            }
+
+            nudges <- true                                  // Tell Hub we're done. Using the same channel is OK in this simple case.
+
+        case <- namequery:
+            namequery <- botname
+        }
     }
 }
 
@@ -125,11 +136,11 @@ func main() {
 
     botlist := os.Args[3:]
 
-    //
-
+    namequery_chans := make([]chan string, len(botlist))
     channels := make([]chan bool, len(botlist))
 
     for n := 0 ; n < len(botlist) ; n++ {
+        namequery_chans[n] = make(chan string)
         channels[n] = make(chan bool)
     }
 
@@ -143,7 +154,25 @@ func main() {
     sim := hal.NewSimulator(tmp)
 
     for n := 0 ; n < len(botlist) ; n++ {
-        go bot_handler(botlist[n], n + 1, sim.G, channels[n])   // Bot IDs are offset by 1, since ID 0 == neutral
+        go bot_handler(botlist[n], n + 1, sim.G, channels[n], namequery_chans[n])   // Bot IDs are offset by 1, since ID 0 == neutral
+    }
+
+    output_hlt := new(hal.HLT)
+    output_hlt.Version = 11
+    output_hlt.Width = sim.G.Width
+    output_hlt.Height = sim.G.Height
+    output_hlt.NumPlayers = sim.G.InitialPlayerCount
+    output_hlt.NumFrames = 0
+    output_hlt.PlayerNames = make([]string, sim.G.InitialPlayerCount)
+    output_hlt.Productions = nil
+    output_hlt.Frames = nil
+    output_hlt.Moves = nil
+    output_hlt.SetProductions(sim.G)
+    output_hlt.AddFrame(sim.G)
+
+    for n := 0; n < sim.G.InitialPlayerCount ; n++ {
+        namequery_chans[n] <- ""
+        output_hlt.PlayerNames[n] = <- namequery_chans[n]
     }
 
     for {
@@ -152,7 +181,11 @@ func main() {
             <- channels[n]
         }
 
+        output_hlt.AddMoves(sim.G)      // Do before simulate, which clears the moves
+
         sim.Simulate()
+
+        output_hlt.AddFrame(sim.G)
 
         if SHOW_PROGRESS_IN_CONSOLE && sim.G.Turn % 20 == 0 {
             print_map(sim.G)
@@ -181,6 +214,11 @@ func main() {
             }
         }
     }
+
+    outfile, _ := os.Create(OUTPUT_FILE_PREFIX + time.Now().Format("20060102_15_04_05") + ".hlt")
+
+    j := json.NewEncoder(outfile)
+    j.Encode(output_hlt)
 }
 
 func print_map(g *hal.Game) {

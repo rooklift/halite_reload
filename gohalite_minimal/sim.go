@@ -1,6 +1,7 @@
 package gohalite
 
-// import "fmt"
+// This is the main simulation code for resolving a turn.
+// It's slightly ugly but does have the virtue of working perfectly.
 
 type Simulator struct {
     G                       *Game
