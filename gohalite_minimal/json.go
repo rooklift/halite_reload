@@ -41,7 +41,7 @@ func (n *Site) UnmarshalJSON(buf []byte) error {
 }
 
 func (n *Site) MarshalJSON() ([]byte, error) {
-    s := fmt.Sprintf("[%d, %d]", n.Owner, n.Strength)
+    s := fmt.Sprintf("[%d,%d]", n.Owner, n.Strength)
     return []byte(s), nil
 }
 
