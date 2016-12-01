@@ -1,13 +1,11 @@
 package gohalite
 
 func (g *Game) SetExtraState() {
-
-    // Every turn, set state as appropriate.
-
     g.Turn += 1
     for i := 0 ; i < g.Size ; i++ {
         g.Moves[i] = STILL
     }
+    // There's more to this function in the real library.
 }
 
 func (g *Game) MakeLookupTable() {
