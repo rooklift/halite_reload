@@ -27,11 +27,11 @@ func NewSimulator(g *Game) *Simulator {
 
     result.moved = make([]bool, g.Size)
     result.zero_strength_winner = make([]int, g.Size)
-    
+
     return result
 }
 
-func (s *Simulator) Simulate() {     // IN PROGRESS
+func (s *Simulator) Simulate() {
 
     // Each frame, each user "places" a certain amount of stuff on each square.
     // There are 3 sources:
