@@ -1,0 +1,1 @@
+This folder contains some stipped-down files from my actual Halite library, which is secret for the duration of the competition. :)
