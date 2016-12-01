@@ -136,6 +136,9 @@ func (g *Game) SetMovesFromHLT() error {
     return nil
 }
 
+// Note that the HLT file stored in the game object (if any) is what we loaded the game from.
+// These functions that follow are to save to some other HLT file, not that one.
+
 func (h *HLT) AddFrame(g *Game) {
 
     h.Frames = append(h.Frames, make([][]Site, g.Height))
