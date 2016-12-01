@@ -1,5 +1,5 @@
 # halite_reload
-Unofficial Halite Engine (Environment)
+Unofficial Halite Engine / Environment / "Clone"
 
 
 It's mostly for testing purposes. It allows you to load an HLT file **at any turn** and have your bots play on from there. Sample usage:
