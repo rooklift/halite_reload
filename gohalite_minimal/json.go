@@ -136,9 +136,6 @@ func (g *Game) SetMovesFromHLT() error {
     return nil
 }
 
-
-
-
 func (h *HLT) AddFrame(g *Game) {
 
     h.Frames = append(h.Frames, make([][]Site, g.Height))
@@ -154,7 +151,6 @@ func (h *HLT) AddFrame(g *Game) {
 
     h.NumFrames++
 }
-
 
 func (h *HLT) AddMoves(g *Game) {
     h.Moves = append(h.Moves, make([][]int, g.Height))
