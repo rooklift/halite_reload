@@ -71,6 +71,12 @@ func bot_handler(cmd string, id int, g *hal.Game, nudges chan bool, namequery ch
 
         case <- nudges:     // Hub tells us to act
 
+            strength := g.StrengthOfPlayer(id)
+            if strength == 0 {
+                nudges <- true                                      // Tell Hub we're done.
+                continue
+            }
+
             fmt.Fprintf(i_pipe, "%s\n", g.GameMapString())          // Send the map
 
             if scanner.Scan() == false {
@@ -107,7 +113,7 @@ func bot_handler(cmd string, id int, g *hal.Game, nudges chan bool, namequery ch
                 }
             }
 
-            nudges <- true                                  // Tell Hub we're done. Using the same channel is OK in this simple case.
+            nudges <- true                                  // Tell Hub we're done.
 
         case <- namequery:
             namequery <- botname

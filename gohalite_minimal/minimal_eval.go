@@ -17,3 +17,13 @@ func (g *Game) TotalStrengths() []int {
     }
     return result
 }
+
+func (g *Game) StrengthOfPlayer(id int) int {
+    result := 0
+    for i := 0 ; i < g.Size ; i++ {
+        if g.Owner[i] == id {
+            result += g.Strength[i]
+        }
+    }
+    return result
+}
