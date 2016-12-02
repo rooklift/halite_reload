@@ -177,6 +177,9 @@ func main() {
     output_hlt.AddFrame(sim.G)
 
     for n := 0; n < sim.G.InitialPlayerCount ; n++ {
+        if n == len(namequery_chans) {
+            break
+        }
         namequery_chans[n] <- ""
         output_hlt.PlayerNames[n] = <- namequery_chans[n]
     }
