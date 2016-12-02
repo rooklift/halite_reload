@@ -14,7 +14,7 @@ import (
 )
 
 
-const SHOW_PROGRESS_IN_CONSOLE = true
+const SHOW_PROGRESS_IN_CONSOLE = false
 const SLOW = false
 
 const OUTPUT_FILE_PREFIX = "reload_"
@@ -49,7 +49,15 @@ func bot_handler(cmd string, id int, g *hal.Game, nudges chan bool, namequery ch
     err = exec_command.Start()
     if err != nil {
         fmt.Printf("Failed to start bot %d (%s)\n", id, cmd)
-        os.Exit(1)
+
+        // So do nothing, but ack all messages from hub.
+
+        for {
+            select {
+                case <- nudges: nudges <- true
+                case <- namequery: namequery <- "non-loader"
+            }
+        }
     }
 
     fmt.Fprintf(i_pipe, "%d\n", id)
