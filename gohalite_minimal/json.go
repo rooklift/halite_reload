@@ -29,15 +29,15 @@ func (n *Site) UnmarshalJSON(buf []byte) error {
     // Convert a len-2 json array into a Site.
     // Stolen from http://eagain.net/articles/go-json-array-to-struct/
 
-	tmp := []interface{}{&n.Owner, &n.Strength}
-	wantLen := len(tmp)
-	if err := json.Unmarshal(buf, &tmp); err != nil {
-		return err
-	}
-	if g, e := len(tmp), wantLen; g != e {
-		return fmt.Errorf("wrong number of fields in Site: %d != %d", g, e)
-	}
-	return nil
+    tmp := []interface{}{&n.Owner, &n.Strength}
+    wantLen := len(tmp)
+    if err := json.Unmarshal(buf, &tmp); err != nil {
+        return err
+    }
+    if g, e := len(tmp), wantLen; g != e {
+        return fmt.Errorf("wrong number of fields in Site: %d != %d", g, e)
+    }
+    return nil
 }
 
 func (n *Site) MarshalJSON() ([]byte, error) {
@@ -48,16 +48,16 @@ func (n *Site) MarshalJSON() ([]byte, error) {
 func (g *Game) Load(filename string, turn int, id int) error {
 
     file, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return err
-	}
+    if err != nil {
+        return err
+    }
 
     var hlt HLT
-	err = json.Unmarshal(file, &hlt)
+    err = json.Unmarshal(file, &hlt)
 
-	if err != nil {
-		return err
-	}
+    if err != nil {
+        return err
+    }
 
     if len(hlt.Frames) <= turn {
         return fmt.Errorf("wanted turn %d but file only had %d frames", turn, len(hlt.Frames))
@@ -83,7 +83,7 @@ func (g *Game) Load(filename string, turn int, id int) error {
 
     g.GameStart = time.Now()
 
-	return nil
+    return nil
 }
 
 func (g *Game) SetBoardFromHLT() error {
