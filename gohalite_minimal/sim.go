@@ -49,8 +49,8 @@ func (s *Simulator) Simulate() {
             s.placements[n][i] = 0
             s.damage[n][i] = 0
             s.present[n][i] = false
-            s.zero_strength_winner[i] = 0
         }
+        s.zero_strength_winner[i] = 0
     }
 
     // Set placements from movement...
