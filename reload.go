@@ -185,7 +185,10 @@ func main() {
     }
 
     for {
-        for n := 0 ; n < len(botlist) ; n++ {   // This is consecutive, not concurrent
+        for n := 0; n < sim.G.InitialPlayerCount ; n++ {        // This is consecutive, not concurrent
+            if n == len(channels) {
+                break
+            }
             channels[n] <- true
             <- channels[n]
         }
@@ -203,24 +206,17 @@ func main() {
             }
         }
 
-        if sim.G.Turn >= 500 {
-            fmt.Printf("Turn %d reached\n", sim.G.Turn)
-            break
-        }
-
-        if len(botlist) > 1 {
-            if sim.G.CountPlayers() == 1 {
-                if SHOW_PROGRESS_IN_CONSOLE {
-                    print_map(sim.G)
-                }
-                all_strengths := sim.G.TotalStrengths()
-                for p := 1 ; p <= sim.G.InitialPlayerCount ; p++ {
-                    if all_strengths[p] > 0 {
-                        fmt.Printf("Turn %d: Victory for player %d (%s)\n", sim.G.Turn, p, botlist[p - 1])
-                    }
-                }
-                break
+        if sim.G.CountPlayers() == 1 {
+            if SHOW_PROGRESS_IN_CONSOLE {
+                print_map(sim.G)
             }
+            all_strengths := sim.G.TotalStrengths()
+            for p := 1 ; p <= sim.G.InitialPlayerCount ; p++ {
+                if all_strengths[p] > 0 {
+                    fmt.Printf("Turn %d: Victory for player %d (%s)\n", sim.G.Turn, p, botlist[p - 1])
+                }
+            }
+            break
         }
     }
 
