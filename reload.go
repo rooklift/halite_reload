@@ -159,7 +159,14 @@ func main() {
     }
 
     tmp := new(hal.Game)
-    err = tmp.Load(hlt_file, initial_turn, 0)
+
+    input_hlt, err := hal.LoadHLT(hlt_file)
+    if err != nil {
+        fmt.Printf("%v\n", err)
+        os.Exit(1)
+    }
+
+    err = tmp.SetBoardFromHLT(input_hlt, initial_turn, 0)
     if err != nil {
         fmt.Printf("%v\n", err)
         os.Exit(1)

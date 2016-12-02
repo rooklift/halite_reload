@@ -24,9 +24,6 @@ type Neighbour struct {
 
 type Game struct {
 
-    // HLT file that the game was loaded from, if any (treat as read-only):
-    HLT                 *HLT
-
     // Lookup table of neighbouring indices and directions:
     Neighbours          [][]Neighbour
 
@@ -57,8 +54,6 @@ func (g *Game) Copy() *Game {
     // There must be a better way of deep copying a struct?
 
     result := new(Game)
-
-    result.HLT = g.HLT
 
     result.GameStart = g.GameStart
     result.Width = g.Width

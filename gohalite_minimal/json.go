@@ -45,69 +45,48 @@ func (n *Site) MarshalJSON() ([]byte, error) {
     return []byte(s), nil
 }
 
-func (g *Game) Load(filename string, turn int, id int) error {
+func LoadHLT(filename string) (*HLT, error) {
 
     file, err := ioutil.ReadFile(filename)
     if err != nil {
-        return err
+        return nil, err
     }
 
-    var hlt HLT
-    err = json.Unmarshal(file, &hlt)
+    hlt := new(HLT)
+    err = json.Unmarshal(file, hlt)
 
     if err != nil {
-        return err
+        return nil, err
     }
+
+    return hlt, nil
+}
+
+func (g *Game) SetBoardFromHLT(hlt *HLT, turn int, id int) error {
 
     if len(hlt.Frames) <= turn {
-        return fmt.Errorf("wanted turn %d but file only had %d frames", turn, len(hlt.Frames))
+        return fmt.Errorf("SetBoardFromHLT: wanted turn %d but file only had %d frames", turn, len(hlt.Frames))
     }
 
-    // ----------------------------------------------------------
-
-    g.HLT = &hlt
+    if g.Width != hlt.Width || g.Height != hlt.Height {
+        g.Width = hlt.Width
+        g.Height = hlt.Height
+        g.Size = g.Width * g.Height
+        g.MakeLookupTable()
+        g.MakeSlices()
+    }
 
     g.Id = id
     g.Turn = turn
 
-    g.Width = g.HLT.Width
-    g.Height = g.HLT.Height
-    g.Size = g.Width * g.Height
-
-    g.InitialPlayerCount = g.HLT.NumPlayers
-
-    g.MakeLookupTable()
-    g.MakeSlices()
-
-    g.SetBoardFromHLT()
-
-    g.GameStart = time.Now()
-
-    return nil
-}
-
-func (g *Game) SetBoardFromHLT() error {
-
-    if g.HLT == nil {
-        return fmt.Errorf("no HLT in Game object")
-    }
-
-    if len(g.HLT.Frames) <= g.Turn {
-        return fmt.Errorf("wanted turn %d but file only had %d frames", g.Turn, len(g.HLT.Frames))
-    }
+    g.InitialPlayerCount = hlt.NumPlayers
 
     for y := 0 ; y < g.Height ; y++ {
         for x := 0 ; x < g.Width ; x++ {
             i := g.XY_to_I(x, y)
-            g.Production[i] = g.HLT.Productions[y][x]               // note y,x format in source
-        }
-    }
-
-    for y := 0 ; y < g.Height ; y++ {
-        for x := 0 ; x < g.Width ; x++ {
-            i := g.XY_to_I(x, y)
-            g.Owner[i] = g.HLT.Frames[g.Turn][y][x].Owner             // note y,x format in source
-            g.Strength[i] = g.HLT.Frames[g.Turn][y][x].Strength       // note y,x format in source
+            g.Production[i] = hlt.Productions[y][x]                 // note y,x format in source
+            g.Owner[i] = hlt.Frames[g.Turn][y][x].Owner             // note y,x format in source
+            g.Strength[i] = hlt.Frames[g.Turn][y][x].Strength       // note y,x format in source
         }
     }
 
@@ -116,20 +95,20 @@ func (g *Game) SetBoardFromHLT() error {
     return nil
 }
 
-func (g *Game) SetMovesFromHLT() error {
+func (g *Game) SetMovesFromHLT(hlt *HLT) error {
 
-    if g.HLT == nil {
-        return fmt.Errorf("no HLT in Game object")
+    if hlt.Width != g.Width || hlt.Height != g.Height {
+        return fmt.Errorf("SetMovesFromHLT: HLT dimensions didn't match game")
     }
 
-    if len(g.HLT.Moves) <= g.Turn {
-        return fmt.Errorf("wanted turn %d but file only had %d movelists", g.Turn, len(g.HLT.Moves))
+    if len(hlt.Moves) <= g.Turn {
+        return fmt.Errorf("SetMovesFromHLT: wanted turn %d but file only had %d movelists", g.Turn, len(hlt.Moves))
     }
 
     for y := 0 ; y < g.Height ; y++ {
         for x := 0 ; x < g.Width ; x++ {
             i := g.XY_to_I(x, y)
-            g.Moves[i] = g.HLT.Moves[g.Turn][y][x]                 // note y,x format in source
+            g.Moves[i] = hlt.Moves[g.Turn][y][x]                    // note y,x format in source
         }
     }
 
@@ -139,7 +118,11 @@ func (g *Game) SetMovesFromHLT() error {
 // Note that the HLT file stored in the game object (if any) is what we loaded the game from.
 // These functions that follow are to save to some other HLT file, not that one.
 
-func (h *HLT) AddFrame(g *Game) {
+func (h *HLT) AddFrame(g *Game) error {
+
+    if h.Width != g.Width || h.Height != g.Height {
+        return fmt.Errorf("AddFrame: HLT dimensions didn't match game")
+    }
 
     h.Frames = append(h.Frames, make([][]Site, g.Height))
     for y := 0 ; y < g.Height ; y++ {
@@ -153,9 +136,16 @@ func (h *HLT) AddFrame(g *Game) {
     }
 
     h.NumFrames++
+
+    return nil
 }
 
-func (h *HLT) AddMoves(g *Game) {
+func (h *HLT) AddMoves(g *Game) error {
+
+    if h.Width != g.Width || h.Height != g.Height {
+        return fmt.Errorf("AddMoves: HLT dimensions didn't match game")
+    }
+
     h.Moves = append(h.Moves, make([][]int, g.Height))
     for y := 0 ; y < g.Height ; y++ {
         h.Moves[len(h.Moves) - 1][y] = make([]int, g.Width)
@@ -163,9 +153,16 @@ func (h *HLT) AddMoves(g *Game) {
             h.Moves[len(h.Moves) - 1][y][x] = g.Moves[g.XY_to_I(x,y)]
         }
     }
+
+    return nil
 }
 
-func (h *HLT) SetProductions(g *Game) {
+func (h *HLT) SetProductions(g *Game) error {
+
+    if h.Width != g.Width || h.Height != g.Height {
+        return fmt.Errorf("SetProductions: HLT dimensions didn't match game")
+    }
+
     h.Productions = nil
     for y := 0 ; y < g.Height ; y++ {
         h.Productions = append(h.Productions, nil)
@@ -173,4 +170,6 @@ func (h *HLT) SetProductions(g *Game) {
             h.Productions[y] = append(h.Productions[y], g.Production[g.XY_to_I(x,y)])
         }
     }
+
+    return nil
 }

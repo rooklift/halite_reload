@@ -37,20 +37,26 @@ func main() {
 
         fmt.Printf("%s\n", filename)
 
+        hlt, err := hal.LoadHLT(filename)
+        if err != nil {
+            fmt.Printf("%v\n", err)
+            continue
+        }
+
         tmp := new(hal.Game)
-        tmp.Load(filename, 0, 1)
+        tmp.SetBoardFromHLT(hlt, 0, 0)
         s := hal.NewSimulator(tmp)
 
         comp := new(hal.Game)
-        comp.Load(filename, 0, 1)
+        comp.SetBoardFromHLT(hlt, 0, 0)
 
-        for turn := 0 ; turn < len(s.G.HLT.Frames) - 1 ; turn++ {
+        for turn := 0 ; turn < len(hlt.Frames) - 1 ; turn++ {
 
-            s.G.SetMovesFromHLT()
+            s.G.SetMovesFromHLT(hlt)
             s.Simulate()
 
             comp.Turn += 1
-            comp.SetBoardFromHLT()
+            comp.SetBoardFromHLT(hlt, comp.Turn, 0)
 
             if s.G.BoardHash() != comp.BoardHash() {
                 fmt.Printf("\n")
