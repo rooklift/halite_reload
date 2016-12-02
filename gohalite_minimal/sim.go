@@ -8,7 +8,6 @@ type Simulator struct {
     placements              [][]int
     damage                  [][]int
     present                 [][]bool
-    moved                   []bool
     zero_strength_winner    []int
 }
 
@@ -26,7 +25,6 @@ func NewSimulator(g *Game) *Simulator {
         result.present[n] = make([]bool, g.Size)
     }
 
-    result.moved = make([]bool, g.Size)
     result.zero_strength_winner = make([]int, g.Size)
 
     return result
@@ -51,7 +49,6 @@ func (s *Simulator) Simulate() {
             s.placements[n][i] = 0
             s.damage[n][i] = 0
             s.present[n][i] = false
-            s.moved[i] = false
             s.zero_strength_winner[i] = 0
         }
     }
@@ -61,9 +58,6 @@ func (s *Simulator) Simulate() {
     for i := 0 ; i < g.Size ; i++ {
         if g.Owner[i] == 0 {
             g.Moves[i] = STILL
-        }
-        if g.Moves[i] != STILL {
-            s.moved[i] = true
         }
         target := g.Movement_to_I(i, g.Moves[i])
         s.placements[g.Owner[i]][target] += g.Strength[i]
@@ -78,7 +72,7 @@ func (s *Simulator) Simulate() {
 
     for i := 0 ; i < g.Size ; i++ {
         if g.Owner[i] != 0 {
-            if s.moved[i] == false {
+            if g.Moves[i] == STILL {
                 s.placements[g.Owner[i]][i] += g.Production[i]
             }
         }
