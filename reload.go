@@ -17,6 +17,8 @@ import (
 const SHOW_PROGRESS_IN_CONSOLE = false
 const SLOW = false
 
+const MAX_TURNS = 500
+
 const OUTPUT_FILE_PREFIX = "reload_"
 
 
@@ -219,6 +221,11 @@ func main() {
             if SLOW {
                 time.Sleep(1 * time.Second)
             }
+        }
+
+        if sim.G.Turn >= MAX_TURNS {
+            fmt.Printf("Turn %d reached\n", sim.G.Turn)
+            break
         }
 
         if sim.G.CountPlayers() == 1 {
