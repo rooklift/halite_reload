@@ -2,7 +2,7 @@
 Unofficial Halite Engine / Environment / "Clone"
 
 
-It's mostly for testing purposes. It allows you to load an HLT file **at any turn** and have your bots play on from there. Sample usage:
+It's mostly for testing purposes. It allows you to load an HLT file **at any turn** (including turn 0) and have your bots play on from there. Sample usage:
 
     reload.exe  some_file.hlt  100  "ruby mybot.rb"  "python my_other_bot.py"  "foobot.exe"
 
