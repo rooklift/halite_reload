@@ -22,7 +22,7 @@ const MAX_TURNS = 500
 const OUTPUT_FILE_PREFIX = "reload_"
 
 
-func bot_handler(cmd string, id int, g *hal.Game, nudges chan bool, namequery chan string) {
+func bot_handler(cmd string, id int, g *hal.Game, nudges chan bool, query chan string) {
 
     have_warned_eof := false
     botname := "Unknown"
@@ -57,7 +57,14 @@ func bot_handler(cmd string, id int, g *hal.Game, nudges chan bool, namequery ch
         for {
             select {
                 case <- nudges: nudges <- true
-                case <- namequery: namequery <- "non-loader"
+                case q := <- query:
+                    if q == "name" {
+                        query <- "non-loader"
+                    } else if q == "time" {
+                        query <- "n/a"
+                    } else {
+                        query <- "huh?"
+                    }
             }
         }
     }
@@ -67,6 +74,8 @@ func bot_handler(cmd string, id int, g *hal.Game, nudges chan bool, namequery ch
     fmt.Fprintf(i_pipe, "%s\n", g.ProductionMapString())
     fmt.Fprintf(i_pipe, "%s\n", g.GameMapString())
 
+    time_inited := time.Now()
+
     scanner := bufio.NewScanner(o_pipe)
     if scanner.Scan() == false {
         if have_warned_eof == false {
@@ -75,6 +84,8 @@ func bot_handler(cmd string, id int, g *hal.Game, nudges chan bool, namequery ch
         }
     }
     botname = scanner.Text()
+
+    time_for_response := time.Since(time_inited)
 
     for {
         select {
@@ -125,8 +136,14 @@ func bot_handler(cmd string, id int, g *hal.Game, nudges chan bool, namequery ch
 
             nudges <- true                                  // Tell Hub we're done.
 
-        case <- namequery:
-            namequery <- botname
+        case q := <- query:
+            if q == "name" {
+                query <- botname
+            } else if q == "time" {
+                query <- fmt.Sprintf("%v", time_for_response)
+            } else {
+                query <- "huh?"
+            }
         }
     }
 }
@@ -152,11 +169,11 @@ func main() {
 
     botlist := os.Args[3:]
 
-    namequery_chans := make([]chan string, len(botlist))
+    query_chans := make([]chan string, len(botlist))
     channels := make([]chan bool, len(botlist))
 
     for n := 0 ; n < len(botlist) ; n++ {
-        namequery_chans[n] = make(chan string)
+        query_chans[n] = make(chan string)
         channels[n] = make(chan bool)
     }
 
@@ -177,7 +194,7 @@ func main() {
     sim := hal.NewSimulator(tmp)
 
     for n := 0 ; n < len(botlist) ; n++ {
-        go bot_handler(botlist[n], n + 1, sim.G, channels[n], namequery_chans[n])   // Bot IDs are offset by 1, since ID 0 == neutral
+        go bot_handler(botlist[n], n + 1, sim.G, channels[n], query_chans[n])   // Bot IDs are offset by 1, since ID 0 == neutral
     }
 
     output_hlt := new(hal.HLT)
@@ -194,11 +211,15 @@ func main() {
     output_hlt.AddFrame(sim.G)
 
     for n := 0; n < sim.G.InitialPlayerCount ; n++ {
-        if n == len(namequery_chans) {
+        if n == len(query_chans) {
             break
         }
-        namequery_chans[n] <- ""
-        output_hlt.PlayerNames[n] = <- namequery_chans[n]
+        query_chans[n] <- "name"
+        output_hlt.PlayerNames[n] = <- query_chans[n]
+
+        query_chans[n] <- "time"
+        time_taken_to_start := <- query_chans[n]
+        fmt.Printf("%s started in %v\n", output_hlt.PlayerNames[n], time_taken_to_start)
     }
 
     for {
