@@ -12,22 +12,22 @@ type Simulator struct {
 }
 
 func NewSimulator(g *Game) *Simulator {
-    result := new(Simulator)
-    result.G = g.Copy()
+    s := new(Simulator)
+    s.G = g.Copy()
 
-    result.placements = make([][]int, g.InitialPlayerCount + 1)
-    result.damage = make([][]int, g.InitialPlayerCount + 1)
-    result.present = make([][]bool, g.InitialPlayerCount + 1)
+    s.placements = make([][]int, g.InitialPlayerCount + 1)
+    s.damage = make([][]int, g.InitialPlayerCount + 1)
+    s.present = make([][]bool, g.InitialPlayerCount + 1)
 
     for n := 0 ; n <= g.InitialPlayerCount ; n++ {
-        result.placements[n] = make([]int, g.Size)
-        result.damage[n] = make([]int, g.Size)
-        result.present[n] = make([]bool, g.Size)
+        s.placements[n] = make([]int, g.Size)
+        s.damage[n] = make([]int, g.Size)
+        s.present[n] = make([]bool, g.Size)
     }
 
-    result.zero_strength_winner = make([]int, g.Size)
+    s.zero_strength_winner = make([]int, g.Size)
 
-    return result
+    return s
 }
 
 func (s *Simulator) Simulate() {
@@ -172,6 +172,7 @@ func (s *Simulator) Simulate() {
             if s.placements[n][i] > 0 {                         // Should only be true once
                 g.Owner[i] = n
                 g.Strength[i] = s.placements[n][i]
+                break
             }
         }
     }
