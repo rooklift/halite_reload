@@ -248,7 +248,7 @@ func main() {
             fmt.Printf("Turn %d reached\n", sim.G.Turn)
             break
         }
-
+/*
         if sim.G.CountPlayers() == 1 {
             if SHOW_PROGRESS_IN_CONSOLE {
                 print_map(sim.G)
@@ -261,6 +261,7 @@ func main() {
             }
             break
         }
+*/
     }
 
     outfile, _ := os.Create(OUTPUT_FILE_PREFIX + time.Now().Format("20060102_15_04_05") + ".hlt")
